@@ -1,3 +1,6 @@
+import json
+
+import instaloader as instaloader
 import requests
 from aiogram import F, Router
 from aiogram.filters import CommandStart
@@ -5,6 +8,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, CallbackQuery
 from bs4 import BeautifulSoup
+from instabot import Bot
 
 import app.keyboards as kb
 
@@ -17,11 +21,10 @@ class Registration(StatesGroup):
 
 
 def check_instagram_subscription(username):
-    url = f'https://www.instagram.com/{username}/'
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    followers_count = soup.find('meta', attrs={'name': 'description'})['content'].split(',')[1].split(' ')[1]
-    return int(followers_count.replace('.', ''))
+    url = f'https://www.instagram.com/{username}/followers/'
+    page = requests.get(url)
+    soup = BeautifulSoup(page.text, "html.parser")
+    followers = soup.findAll('span', class_='_ap3a _aaco _aacw _aacx _aad7 _aade')
 
 
 def check_instagram_post_comments(post_url):
@@ -54,6 +57,10 @@ async def reg_one(callback: CallbackQuery, state: FSMContext):
 @router.message(Registration.username)
 async def reg_two(message: Message, state: FSMContext):
     await state.update_data(username=message.text)
+    if check_instagram_subscription(message.text):
+        print('+')
+    else:
+        print('-')
     await state.set_state(Registration.codeword)
     await message.answer('Введите кодовое слово')
 
